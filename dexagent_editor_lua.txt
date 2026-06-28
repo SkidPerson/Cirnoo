@@ -1,9 +1,11 @@
 --[[
     Dex
-    Version 3.1 - Modified with SecretServicePanel
-    
-    Developed by Chillz
-    Modified by Yoolz - Replaced Console with SecretServicePanel
+    Version 3.1
+    Agent Edition 
+
+    Developed by Yoolz
+(obs: Dex++ was used as a basis for doing this, thx chillz:))
+
 ]]
 
 local selection
@@ -90,7 +92,7 @@ local function main()
         -- ============================================
         window = Lib.Window.new()
         window:SetTitle("DataStore Editor")
-        window:Resize(246, 400)
+        window:Resize(246, 500)
         Editor.Window = window
 
         local content = window.GuiElems.Content
@@ -470,7 +472,7 @@ local function main()
             btn.BackgroundTransparency = 1
             -- Ocupa toda a largura, começa em X=16 (depois do ícone de toggle)
             btn.Size = UDim2.new(1, -16, 0, 18)
-            btn.Position = UDim2.new(0, 16, 0, 24 + (index * 18))
+            btn.Position = UDim2.new(0, 87, 0, 24 + (index * 18))
             btn.Visible = false
             btn.Active = true
             btn.AutoButtonColor = false
