@@ -236,7 +236,7 @@ local function main()
             -- Tamanho: header do Dex (20px) + bodyFrame (116px) = 136 de conteúdo
             editWindow = Lib.Window.new()
             editWindow:SetTitle("Edit Value")
-            editWindow:Resize(248, 190)   -- altura extra pra Save/Cancel não serem cortados
+            editWindow:Resize(248, 175)   -- altura extra pra Save/Cancel não serem cortados
             Editor.EditWindow = editWindow
 
             local eContent = editWindow.GuiElems.Content
