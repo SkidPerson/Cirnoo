@@ -470,7 +470,7 @@ local function main()
             btn.BackgroundTransparency = 1
             -- Ocupa toda a largura, começa em X=16 (depois do ícone de toggle)
             btn.Size = UDim2.new(1, -16, 0, 18)
-            btn.Position = UDim2.new(0, 16, 0, 24 + (index * 18))
+            btn.Position = UDim2.new(0, 87, 0, 24 + (index * 18))
             btn.Visible = false
             btn.Active = true
             btn.AutoButtonColor = false
