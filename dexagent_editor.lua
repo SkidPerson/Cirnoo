@@ -1,9 +1,11 @@
 --[[
     Dex
-    Version 3.1 - Modified with SecretServicePanel
-    
-    Developed by Chillz
-    Modified by Yoolz - Replaced Console with SecretServicePanel
+    Version 3.1
+    Agent Edition 
+
+    Developed by Yoolz
+(obs: Dex++ was used as a basis for doing this, thx chillz:))
+
 ]]
 
 local selection
@@ -90,7 +92,7 @@ local function main()
         -- ============================================
         window = Lib.Window.new()
         window:SetTitle("DataStore Editor")
-        window:Resize(246, 400)
+        window:Resize(246, 500)
         Editor.Window = window
 
         local content = window.GuiElems.Content
@@ -206,22 +208,52 @@ local function main()
             local infoText    = ""
 
             if valueType == "inventory" and inventory then
-                -- Coleta filhos: mostra nome + ClassName (e value se for ValueBase)
-                local parts = {}
-                for _, child in ipairs(inventory:GetChildren()) do
-                    if child:IsA("ValueBase") then
-                        table.insert(parts, '"' .. child.Name .. ':' .. tostring(child.Value) .. '"')
-                    else
-                        table.insert(parts, '"' .. child.Name .. '"')
+                -- Coleta TODOS os filhos recursivamente
+                local itemParts  = {}  -- itens normais (não ValueBase): só o nome
+                local valueParts = {}  -- ValueBase: nome=valor (BoolValue, IntValue, etc.)
+
+                local function scanChildren(parent)
+                    for _, child in ipairs(parent:GetChildren()) do
+                        if child:IsA("ValueBase") then
+                            -- BoolValue, IntValue, NumberValue, StringValue, Color3Value, etc.
+                            local valStr = tostring(child.Value)
+                            table.insert(valueParts,
+                                child.ClassName .. '["' .. child.Name .. '"]=' .. valStr)
+                            table.insert(valuesList, {
+                                name      = child.Name,
+                                className = child.ClassName,
+                                value     = valStr,
+                                obj       = child,
+                            })
+                        else
+                            -- Item normal (Tool, Part, Model, Folder, etc.)
+                            table.insert(itemParts, '"' .. child.Name .. '"')
+                            table.insert(valuesList, {
+                                name      = child.Name,
+                                className = child.ClassName,
+                                value     = nil,
+                                obj       = child,
+                            })
+                        end
                     end
-                    table.insert(valuesList, {
-                        name      = child.Name,
-                        className = child.ClassName,
-                        value     = child:IsA("ValueBase") and tostring(child.Value) or nil,
-                        obj       = child,
-                    })
                 end
-                initialText = '{"Inventory":[' .. table.concat(parts, ",") .. "]}"
+                scanChildren(inventory)
+
+                -- Monta o texto no formato pedido:
+                -- {"Inventory",["Item1","Item2",...],BoolValue["alive"]=true,...}
+                local lines = {}
+                table.insert(lines, '{"Inventory"')
+
+                if #itemParts > 0 then
+                    table.insert(lines, ',[\n  ' .. table.concat(itemParts, ',\n  ') .. '\n]')
+                end
+
+                if #valueParts > 0 then
+                    table.insert(lines, ',\n' .. table.concat(valueParts, ',\n'))
+                end
+
+                table.insert(lines, '}')
+                initialText = table.concat(lines, "")
                 infoText    = inventory.ClassName .. " · " .. inventory.Name
                               .. " (" .. #valuesList .. " items)"
             elseif valueObj then
@@ -234,9 +266,12 @@ local function main()
 
             -- ── Cria a Window do Dex ──────────────────────────────
             -- Tamanho: header do Dex (20px) + bodyFrame (116px) = 136 de conteúdo
+            -- Altura da janela: maior para inventários (textbox multilinha)
+            local winHeight = (valueType == "inventory") and 230 or 145
+
             editWindow = Lib.Window.new()
             editWindow:SetTitle("Edit Value")
-            editWindow:Resize(248, 145)   -- altura extra pra Save/Cancel não serem cortados
+            editWindow:Resize(248, winHeight)
             Editor.EditWindow = editWindow
 
             local eContent = editWindow.GuiElems.Content
@@ -289,13 +324,18 @@ local function main()
             valueLabel.Parent     = bodyFrame
 
             -- ── TextBox do valor — TextBox_4 do LMG2L ────────────
+            -- Altura dinâmica: maior se for inventário (conteúdo multilinha)
+            local boxHeight = (valueType == "inventory") and 120 or 18
+
             local valueBox = Instance.new("TextBox")
             valueBox.Name             = "TextBox_4"
             valueBox.BackgroundColor3 = Color3.fromRGB(38, 38, 38)
             valueBox.BorderSizePixel  = 0
             valueBox.TextXAlignment   = Enum.TextXAlignment.Left
+            valueBox.TextYAlignment   = Enum.TextYAlignment.Top
             valueBox.TextWrapped      = true
-            valueBox.TextSize         = 14
+            valueBox.MultiLine        = true
+            valueBox.TextSize         = 13
             valueBox.TextColor3       = Color3.fromRGB(255, 255, 255)
             valueBox.RichText         = false
             valueBox.ClipsDescendants = true
@@ -304,7 +344,7 @@ local function main()
                 Enum.FontWeight.Regular,
                 Enum.FontStyle.Normal
             )
-            valueBox.Size     = UDim2.new(0, 186, 0, 18)
+            valueBox.Size     = UDim2.new(1, -62, 0, boxHeight)
             valueBox.Position = UDim2.new(0, 54, 0, 34)
             valueBox.Text     = initialText
             valueBox.Parent   = bodyFrame
@@ -321,8 +361,9 @@ local function main()
                 Enum.FontWeight.Regular,
                 Enum.FontStyle.Normal
             )
+            local btnY = 34 + boxHeight + 10  -- 10px de margem abaixo do textbox
             saveBtn.Size     = UDim2.new(0, 110, 0, 22)
-            saveBtn.Position = UDim2.new(0, 8, 0, 90)
+            saveBtn.Position = UDim2.new(0, 8, 0, btnY)
             saveBtn.Text     = "Save"
             saveBtn.Parent   = bodyFrame
 
@@ -339,7 +380,7 @@ local function main()
                 Enum.FontStyle.Normal
             )
             cancelBtn.Size     = UDim2.new(0, 110, 0, 22)
-            cancelBtn.Position = UDim2.new(0, 130, 0, 90)
+            cancelBtn.Position = UDim2.new(0, 130, 0, btnY)
             cancelBtn.Text     = "Cancel"
             cancelBtn.Parent   = bodyFrame
 
@@ -15343,7 +15384,7 @@ Main = (function()
 		
 		Main.CreateApp({Name = "Save Instance", IconMap = Main.LargeIcons, Icon = "Book", Window = SaveInstance.Window})
 		
-		Main.CreateApp({Name = "Editor", Icon = "rbxthumb://type=Asset&id=132920803719581&w=150&h=150", Window = Editor.Window})
+		Main.CreateApp({Name = "DataStore Editor", Icon = "rbxthumb://type=Asset&id=132920803719581&w=150&h=150", Window = Editor.Window})
 		
 		Lib.ShowGui(gui)
 	end
